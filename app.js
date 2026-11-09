@@ -24,308 +24,61 @@ $('makeOutline').onclick=async()=>{
 
   const oldText=button.textContent;
   button.disabled=true;
-  button.textContent='Đang viết kịch bản AI...';
+  button.textContent='Đang nghiên cứu và viết kịch bản...';
 
   try{
     const p=project();
-    const d=await aiJson('/api/script',{
-      prompt:`Hãy viết kịch bản video hoàn chỉnh bằng tiếng Việt.
+    const duration=p.duration||'60 giây';
+    const prompt=`Bạn là biên kịch video chuyên nghiệp, đồng thời là người biên tập nội dung chuyên sâu cho thương hiệu Phong Thủy Và Đồ Thờ Vạn Nhật Khang.
 
-Chủ đề: ${subject}
-Thời lượng: ${p.duration}
-Tỷ lệ: ${p.ratio}
-Phong cách: ${p.visualStyle}
-Thương hiệu: Vạn Nhật Khang.
+NHIỆM VỤ
+Viết một kịch bản video hoàn chỉnh, có chiều sâu và giàu thông tin về đúng chủ đề sau:
+“${subject}”
 
-Yêu cầu:
-- Có câu mở đầu thu hút người xem.
-- Viết lời thoại đầy đủ, tự nhiên.
-- Nội dung chính có kiến thức và ví dụ cụ thể.
-- Có hướng dẫn hữu ích.
-- Kết thúc bằng thông điệp và lời mời tương tác.
-- Không viết dàn ý sơ sài.
-- Chia nội dung theo thời lượng video.`
-    });
+THÔNG SỐ SẢN XUẤT
+- Thời lượng: ${duration}
+- Khung hình: ${p.ratio}
+- Phong cách hình ảnh: ${p.visualStyle}
+- Thương hiệu: Vạn Nhật Khang
+- Ngôn ngữ: tiếng Việt tự nhiên, chuẩn chính tả, dễ đọc thành lời.
 
+YÊU CẦU BẮT BUỘC VỀ CHẤT LƯỢNG
+1. Bám sát chính xác chủ đề, không biến thành bài giới thiệu phong thủy chung chung.
+2. Xác định một thông điệp trung tâm rõ ràng. Mỗi phần phải làm sáng tỏ thông điệp đó.
+3. Triển khai ít nhất 3 luận điểm cụ thể; giải thích nguyên nhân, ý nghĩa và cách áp dụng. Dùng ví dụ đời sống thực tế, tình huống hoặc cách quan sát cụ thể phù hợp chủ đề.
+4. Nếu chủ đề thuộc Phong Thủy, Bát Tự, Tử Vi, Huyền Không Phi Tinh, Kỳ Môn Độn Giáp hoặc mệnh lý: dùng đúng thuật ngữ chuyên môn; giải thích thuật ngữ ngay lần đầu xuất hiện; phân biệt nguyên lý, trường phái và quan niệm dân gian khi cần. Không tự bịa Can Chi, ngày tháng, số liệu, trích dẫn cổ thư hay kết luận định mệnh. Nếu dữ kiện đầu vào chưa đủ để kết luận, nói rõ giới hạn thay vì đoán.
+5. Không lặp ý, không dùng câu sáo rỗng như “mang lại may mắn, tài lộc” nếu không giải thích cụ thể bằng luận điểm có liên quan.
+6. Lời thoại phải viết thành câu hoàn chỉnh để người dẫn có thể đọc trực tiếp; không chỉ liệt kê gạch đầu dòng hoặc mô tả ý tưởng.
+7. Mở đầu bằng một câu hỏi, nghịch lý hoặc tình huống thật sự liên quan đến chủ đề; tránh kiểu mở đầu chung “Trong cuộc sống hiện đại”.
+8. Kết thúc bằng một kết luận có giá trị, một việc người xem có thể tự thực hiện và lời mời theo dõi Vạn Nhật Khang tự nhiên, không quảng cáo lộ liễu.
+9. Độ dài lời thoại phải phù hợp thời lượng, ưu tiên khoảng 130–150 từ tiếng Việt mỗi phút. Không kéo dài bằng cách lặp lại.
+
+ĐỊNH DẠNG ĐẦU RA
+A. TIÊU ĐỀ VIDEO: hấp dẫn, chính xác, không giật tít sai lệch.
+B. Ý CHÍNH: một câu nêu thông điệp trung tâm.
+C. KỊCH BẢN THEO MỐC THỜI GIAN:
+- Chia thành các đoạn có mốc thời gian từ đầu đến cuối, tổng thời lượng khớp thông số.
+- Mỗi đoạn ghi rõ: HÌNH ẢNH/GÓC MÁY, LỜI THOẠI NGUYÊN VĂN, CHỮ HIỂN THỊ (nếu cần), ÂM THANH/NHẠC (nếu cần).
+- Lời thoại là phần quan trọng nhất; phải cụ thể, có thông tin và đọc được ngay.
+D. GỢI Ý HÌNH ẢNH: 3–5 cảnh minh họa đúng nội dung, không dùng hình trang trí vô nghĩa.
+E. CÂU KẾT/CTA: một câu ngắn, tự nhiên.
+
+Chỉ xuất kịch bản hoàn chỉnh theo cấu trúc trên. Không giải thích lại yêu cầu, không tự nhận đã kiểm chứng nguồn bên ngoài nếu chưa thực sự có nguồn.`;
+    const d=await aiJson('/api/script',{prompt});
     if(!d.text) throw new Error('AI chưa trả về nội dung kịch bản');
 
     $('scriptText').value=d.text;
     p.script=d.text;
     persist();
-    toast('AI đã tạo kịch bản hoàn chỉnh');
+    toast('AI đã tạo kịch bản chuyên sâu');
   }catch(e){
-    toast(e.message);
+    toast('Không tạo được kịch bản: '+e.message);
   }finally{
     button.disabled=false;
     button.textContent=oldText;
   }
 };
-  const button=$('makeOutline');
-  const subject=$('idea').value.trim();
-  if(!subject){
-    toast('Hãy nhập chủ đề video trước');
-    return;
-  }
-
-  const oldText=button.textContent;
-  button.disabled=true;
-  button.textContent='Đang viết kịch bản AI...';
-
-  try{
-    const p=project();
-    const d=await aiJson('/api/script',{
-      prompt:`Hãy viết kịch bản video hoàn chỉnh bằng tiếng Việt.
-
-Chủ đề: ${subject}
-Thời lượng: ${p.duration}
-Tỷ lệ: ${p.ratio}
-Phong cách: ${p.visualStyle}
-Thương hiệu: Vạn Nhật Khang.
-
-Yêu cầu:
-- Có câu mở đầu thu hút người xem.
-- Viết lời thoại đầy đủ, tự nhiên.
-- Nội dung chính có kiến thức và ví dụ cụ thể.
-- Có hướng dẫn hữu ích.
-- Kết thúc bằng thông điệp và lời mời tương tác.
-- Không viết dàn ý sơ sài.
-- Chia nội dung theo thời lượng video.`
-    });
-
-    if(!d.text) throw new Error('AI chưa trả về nội dung kịch bản');
-
-    $('scriptText').value=d.text;
-    p.script=d.text;
-    persist();
-    toast('AI đã tạo kịch bản hoàn chỉnh');
-  }catch(e){
-    toast(e.message);
-  }finally{
-    button.disabled=false;
-    button.textContent=oldText;
-  }
-};
-  const button=$('makeOutline');
-  const subject=$('idea').value.trim();
-  if(!subject){
-    toast('Hãy nhập chủ đề video trước');
-    return;
-  }
-
-  const oldText=button.textContent;
-  button.disabled=true;
-  button.textContent='Đang viết kịch bản AI...';
-
-  try{
-    const p=project();
-    const d=await aiJson('/api/script',{
-      prompt:`Hãy viết kịch bản video hoàn chỉnh bằng tiếng Việt.
-
-Chủ đề: ${subject}
-Thời lượng: ${p.duration}
-Tỷ lệ: ${p.ratio}
-Phong cách: ${p.visualStyle}
-Thương hiệu: Vạn Nhật Khang.
-
-Yêu cầu:
-- Có câu mở đầu thu hút người xem.
-- Viết lời thoại đầy đủ, tự nhiên.
-- Nội dung chính có kiến thức và ví dụ cụ thể.
-- Có hướng dẫn hữu ích.
-- Kết thúc bằng thông điệp và lời mời tương tác.
-- Không viết dàn ý sơ sài.
-- Chia nội dung theo thời lượng video.`
-    });
-
-    if(!d.text) throw new Error('AI chưa trả về nội dung kịch bản');
-
-    $('scriptText').value=d.text;
-    p.script=d.text;
-    persist();
-    toast('AI đã tạo kịch bản hoàn chỉnh');
-  }catch(e){
-    toast(e.message);
-  }finally{
-    button.disabled=false;
-    button.textContent=oldText;
-  }
-};  const button=$('makeOutline');
-  const subject=$('idea').value.trim();
-  if(!subject){
-    toast('Hãy nhập chủ đề video trước');
-    return;
-  }
-
-  const oldText=button.textContent;
-  button.disabled=true;
-  button.textContent='Đang viết kịch bản AI...';
-
-  try{
-    const p=project();
-    const d=await aiJson('/api/script',{
-      prompt:`Hãy viết kịch bản video hoàn chỉnh bằng tiếng Việt.
-
-Chủ đề: ${subject}
-Thời lượng: ${p.duration}
-Tỷ lệ: ${p.ratio}
-Phong cách: ${p.visualStyle}
-Thương hiệu: Vạn Nhật Khang.
-
-Yêu cầu:
-- Có câu mở đầu thu hút người xem.
-- Viết lời thoại đầy đủ, tự nhiên.
-- Nội dung chính có kiến thức và ví dụ cụ thể.
-- Có hướng dẫn hữu ích.
-- Kết thúc bằng thông điệp và lời mời tương tác.
-- Không viết dàn ý sơ sài.
-- Chia nội dung theo thời lượng video.`
-    });
-
-    if(!d.text) throw new Error('AI chưa trả về nội dung kịch bản');
-
-    $('scriptText').value=d.text;
-    p.script=d.text;
-    persist();
-    toast('AI đã tạo kịch bản hoàn chỉnh');
-  }catch(e){
-    toast(e.message);
-  }finally{
-    button.disabled=false;
-    button.textContent=oldText;
-  }
-};  const button=$('makeOutline');
-  const subject=$('idea').value.trim();
-  if(!subject){
-    toast('Hãy nhập chủ đề video trước');
-    return;
-  }
-
-  const oldText=button.textContent;
-  button.disabled=true;
-  button.textContent='Đang viết kịch bản AI...';
-
-  try{
-    const p=project();
-    const d=await aiJson('/api/script',{
-      prompt:`Hãy viết kịch bản video hoàn chỉnh bằng tiếng Việt.
-
-Chủ đề: ${subject}
-Thời lượng: ${p.duration}
-Tỷ lệ: ${p.ratio}
-Phong cách: ${p.visualStyle}
-Thương hiệu: Vạn Nhật Khang.
-
-Yêu cầu:
-- Có câu mở đầu thu hút người xem.
-- Viết lời thoại đầy đủ, tự nhiên.
-- Nội dung chính có kiến thức và ví dụ cụ thể.
-- Có hướng dẫn hữu ích.
-- Kết thúc bằng thông điệp và lời mời tương tác.
-- Không viết dàn ý sơ sài.
-- Chia nội dung theo thời lượng video.`
-    });
-
-    if(!d.text) throw new Error('AI chưa trả về nội dung kịch bản');
-
-    $('scriptText').value=d.text;
-    p.script=d.text;
-    persist();
-    toast('AI đã tạo kịch bản hoàn chỉnh');
-  }catch(e){
-    toast(e.message);
-  }finally{
-    button.disabled=false;
-    button.textContent=oldText;
-  }
-};  const button=$('makeOutline');
-  const subject=$('idea').value.trim();
-  if(!subject){
-    toast('Hãy nhập chủ đề video trước');
-    return;
-  }
-
-  const oldText=button.textContent;
-  button.disabled=true;
-  button.textContent='Đang viết kịch bản AI...';
-
-  try{
-    const p=project();
-    const d=await aiJson('/api/script',{
-      prompt:`Hãy viết kịch bản video hoàn chỉnh bằng tiếng Việt.
-
-Chủ đề: ${subject}
-Thời lượng: ${p.duration}
-Tỷ lệ: ${p.ratio}
-Phong cách: ${p.visualStyle}
-Thương hiệu: Vạn Nhật Khang.
-
-Yêu cầu:
-- Có câu mở đầu thu hút người xem.
-- Viết lời thoại đầy đủ, tự nhiên.
-- Nội dung chính có kiến thức và ví dụ cụ thể.
-- Có hướng dẫn hữu ích.
-- Kết thúc bằng thông điệp và lời mời tương tác.
-- Không viết dàn ý sơ sài.
-- Chia nội dung theo thời lượng video.`
-    });
-
-    if(!d.text) throw new Error('AI chưa trả về nội dung kịch bản');
-
-    $('scriptText').value=d.text;
-    p.script=d.text;
-    persist();
-    toast('AI đã tạo kịch bản hoàn chỉnh');
-  }catch(e){
-    toast(e.message);
-  }finally{
-    button.disabled=false;
-    button.textContent=oldText;
-  }
-};  const button=$('makeOutline');
-  const subject=$('idea').value.trim();
-  if(!subject){
-    toast('Hãy nhập chủ đề video trước');
-    return;
-  }
-
-  const oldText=button.textContent;
-  button.disabled=true;
-  button.textContent='Đang viết kịch bản AI...';
-
-  try{
-    const p=project();
-    const d=await aiJson('/api/script',{
-      prompt:`Hãy viết kịch bản video hoàn chỉnh bằng tiếng Việt.
-
-Chủ đề: ${subject}
-Thời lượng: ${p.duration}
-Tỷ lệ: ${p.ratio}
-Phong cách: ${p.visualStyle}
-Thương hiệu: Vạn Nhật Khang.
-
-Yêu cầu:
-- Có câu mở đầu thu hút người xem.
-- Viết lời thoại đầy đủ, tự nhiên.
-- Nội dung chính có kiến thức và ví dụ cụ thể.
-- Có hướng dẫn hữu ích.
-- Kết thúc bằng thông điệp và lời mời tương tác.
-- Không viết dàn ý sơ sài.
-- Chia nội dung theo thời lượng video.`
-    });
-
-    if(!d.text) throw new Error('AI chưa trả về nội dung kịch bản');
-
-    $('scriptText').value=d.text;
-    p.script=d.text;
-    persist();
-    toast('AI đã tạo kịch bản hoàn chỉnh');
-  }catch(e){
-    toast(e.message);
-  }finally{
-    button.disabled=false;
-    button.textContent=oldText;
-  }
-};function renderScenes(){const p=project();$('sceneCount').textContent=p.scenes.length+' cảnh';$('sceneList').innerHTML='';if(!p.scenes.length){$('sceneList').innerHTML='<div class="empty">Chưa có phân cảnh. Nhấn “Thêm phân cảnh” để lập shot list.</div>';return}p.scenes.forEach((s,i)=>{const card=document.createElement('article');card.className='scene-card';const num=document.createElement('div');num.className='scene-num';num.textContent=String(i+1).padStart(2,'0');const body=document.createElement('div');const title=document.createElement('input');title.placeholder='Tên phân cảnh';title.value=s.title;title.oninput=()=>{s.title=title.value;persist()};const desc=document.createElement('textarea');desc.rows=2;desc.placeholder='Mô tả hình ảnh, hành động, lời thoại, góc máy...';desc.value=s.description;desc.onchange=()=>{s.description=desc.value;persist()};body.append(title,desc);const del=document.createElement('button');del.className='remove';del.textContent='×';del.title='Xóa cảnh';del.onclick=()=>{p.scenes.splice(i,1);persist();renderScenes()};card.append(num,body,del);$('sceneList').append(card)})}
+function renderScenes(){const p=project();$('sceneCount').textContent=p.scenes.length+' cảnh';$('sceneList').innerHTML='';if(!p.scenes.length){$('sceneList').innerHTML='<div class="empty">Chưa có phân cảnh. Nhấn “Thêm phân cảnh” để lập shot list.</div>';return}p.scenes.forEach((s,i)=>{const card=document.createElement('article');card.className='scene-card';const num=document.createElement('div');num.className='scene-num';num.textContent=String(i+1).padStart(2,'0');const body=document.createElement('div');const title=document.createElement('input');title.placeholder='Tên phân cảnh';title.value=s.title;title.oninput=()=>{s.title=title.value;persist()};const desc=document.createElement('textarea');desc.rows=2;desc.placeholder='Mô tả hình ảnh, hành động, lời thoại, góc máy...';desc.value=s.description;desc.onchange=()=>{s.description=desc.value;persist()};body.append(title,desc);const del=document.createElement('button');del.className='remove';del.textContent='×';del.title='Xóa cảnh';del.onclick=()=>{p.scenes.splice(i,1);persist();renderScenes()};card.append(num,body,del);$('sceneList').append(card)})}
 function addScene(){saveForm();project().scenes.push({title:'Phân cảnh mới',description:''});persist();renderScenes();toast('Đã thêm phân cảnh')}
 $('addScene').onclick=addScene;
 $('videoInput').onchange=e=>{const files=Array.from(e.target.files||[]);if(!files.length)return;const grid=$('mediaGrid');if(grid.querySelector('.empty'))grid.innerHTML='';files.forEach(f=>{const url=URL.createObjectURL(f);mediaUrls.push(url);const card=document.createElement('article');card.className='media-card';const v=document.createElement('video');v.controls=true;v.playsInline=true;v.src=url;const name=document.createElement('p');name.textContent=f.name+' · '+(f.size/1048576).toFixed(1)+' MB';card.append(v,name);grid.append(card)});updateStats();toast('Đã nạp '+files.length+' video để xem trước');e.target.value=''};
