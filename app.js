@@ -14,69 +14,67 @@ function newProject(){saveForm();const p={id:makeId(),title:'Dự án mới',dur
 $('newProject').onclick=newProject;$('dashboardNew').onclick=newProject;
 ['projectTitle','duration','ratio','visualStyle','idea','scriptText'].forEach(id=>$(id).addEventListener('change',()=>{saveForm();$('welcomeTitle').textContent=project().title}));
 $('saveScript').onclick=()=>{saveForm();toast('Đã lưu kịch bản trên thiết bị')};
-$('makeOutline').onclick=async()=>{
-  const button=$('makeOutline');
-  const subject=$('idea').value.trim();
-  if(!subject){
-    toast('Hãy nhập chủ đề video trước');
-    return;
-  }
+function buildProfessionalPrompt(topic,p,researchText){
+ return `VAI TRÒ: Bạn là biên kịch trưởng, biên tập viên chuyên ngành và đạo diễn video của Phong Thủy Và Đồ Thờ Vạn Nhật Khang.
 
-  const oldText=button.textContent;
-  button.disabled=true;
-  button.textContent='Đang nghiên cứu và viết kịch bản...';
+ĐỀ BÀI CỤ THỂ:
+${topic}
 
-  try{
-    const p=project();
-    const duration=p.duration||'60 giây';
-    const prompt=`Bạn là biên kịch video chuyên nghiệp, đồng thời là người biên tập nội dung chuyên sâu cho thương hiệu Phong Thủy Và Đồ Thờ Vạn Nhật Khang.
-
-NHIỆM VỤ
-Viết một kịch bản video hoàn chỉnh, có chiều sâu và giàu thông tin về đúng chủ đề sau:
-“${subject}”
-
-THÔNG SỐ SẢN XUẤT
-- Thời lượng: ${duration}
-- Khung hình: ${p.ratio}
-- Phong cách hình ảnh: ${p.visualStyle}
+THÔNG SỐ:
+- Thời lượng: ${p.duration||'60 giây'}
+- Tỷ lệ: ${p.ratio||'9:16 · Video dọc'}
+- Phong cách hình ảnh: ${p.visualStyle||'Điện ảnh chân thực'}
 - Thương hiệu: Vạn Nhật Khang
-- Ngôn ngữ: tiếng Việt tự nhiên, chuẩn chính tả, dễ đọc thành lời.
+- Ngôn ngữ: tiếng Việt tự nhiên, chuẩn thuật ngữ, đọc thành lời được.
 
-YÊU CẦU BẮT BUỘC VỀ CHẤT LƯỢNG
-1. Bám sát chính xác chủ đề, không biến thành bài giới thiệu phong thủy chung chung.
-2. Xác định một thông điệp trung tâm rõ ràng. Mỗi phần phải làm sáng tỏ thông điệp đó.
-3. Triển khai ít nhất 3 luận điểm cụ thể; giải thích nguyên nhân, ý nghĩa và cách áp dụng. Dùng ví dụ đời sống thực tế, tình huống hoặc cách quan sát cụ thể phù hợp chủ đề.
-4. Nếu chủ đề thuộc Phong Thủy, Bát Tự, Tử Vi, Huyền Không Phi Tinh, Kỳ Môn Độn Giáp hoặc mệnh lý: dùng đúng thuật ngữ chuyên môn; giải thích thuật ngữ ngay lần đầu xuất hiện; phân biệt nguyên lý, trường phái và quan niệm dân gian khi cần. Không tự bịa Can Chi, ngày tháng, số liệu, trích dẫn cổ thư hay kết luận định mệnh. Nếu dữ kiện đầu vào chưa đủ để kết luận, nói rõ giới hạn thay vì đoán.
-5. Không lặp ý, không dùng câu sáo rỗng như “mang lại may mắn, tài lộc” nếu không giải thích cụ thể bằng luận điểm có liên quan.
-6. Lời thoại phải viết thành câu hoàn chỉnh để người dẫn có thể đọc trực tiếp; không chỉ liệt kê gạch đầu dòng hoặc mô tả ý tưởng.
-7. Mở đầu bằng một câu hỏi, nghịch lý hoặc tình huống thật sự liên quan đến chủ đề; tránh kiểu mở đầu chung “Trong cuộc sống hiện đại”.
-8. Kết thúc bằng một kết luận có giá trị, một việc người xem có thể tự thực hiện và lời mời theo dõi Vạn Nhật Khang tự nhiên, không quảng cáo lộ liễu.
-9. Độ dài lời thoại phải phù hợp thời lượng, ưu tiên khoảng 130–150 từ tiếng Việt mỗi phút. Không kéo dài bằng cách lặp lại.
+${researchText?'TƯ LIỆU NGHIÊN CỨU WEB ĐƯỢC CUNG CẤP (ưu tiên làm căn cứ; không tự thêm dữ kiện ngoài nguồn; giữ URL và giới hạn nguồn):\\n'+researchText:'CHẾ ĐỘ KHÔNG CÓ NGHIÊN CỨU ĐÍNH KÈM: không tuyên bố đã tra cứu web; nếu cần dữ kiện cập nhật hoặc chuyên biệt thì ghi rõ điểm cần kiểm chứng.'}
 
-ĐỊNH DẠNG ĐẦU RA
-A. TIÊU ĐỀ VIDEO: hấp dẫn, chính xác, không giật tít sai lệch.
-B. Ý CHÍNH: một câu nêu thông điệp trung tâm.
-C. KỊCH BẢN THEO MỐC THỜI GIAN:
-- Chia thành các đoạn có mốc thời gian từ đầu đến cuối, tổng thời lượng khớp thông số.
-- Mỗi đoạn ghi rõ: HÌNH ẢNH/GÓC MÁY, LỜI THOẠI NGUYÊN VĂN, CHỮ HIỂN THỊ (nếu cần), ÂM THANH/NHẠC (nếu cần).
-- Lời thoại là phần quan trọng nhất; phải cụ thể, có thông tin và đọc được ngay.
-D. GỢI Ý HÌNH ẢNH: 3–5 cảnh minh họa đúng nội dung, không dùng hình trang trí vô nghĩa.
-E. CÂU KẾT/CTA: một câu ngắn, tự nhiên.
+YÊU CẦU BIÊN TẬP:
+1. Chọn MỘT góc khai thác sắc nét cho đúng đề bài; không mở rộng lan man sang các chủ đề gần giống.
+2. Nêu rõ người xem mục tiêu và điều họ sẽ hiểu/làm được sau video.
+3. Có luận đề trung tâm và tối thiểu 3 luận điểm thực chất (với video ngắn thì cô đọng nhưng vẫn có giải thích).
+4. Mỗi luận điểm phải có: khái niệm/tiêu chí cụ thể → giải thích cơ chế hoặc logic → ví dụ minh họa sát đời sống → cách áp dụng hoặc điều cần tránh.
+5. Với nội dung Phong Thủy, Bát Tự, Tử Vi, Huyền Không Phi Tinh, Kỳ Môn Độn Giáp: sử dụng thuật ngữ chuyên môn chính xác; phân biệt trường phái, nguyên lý và dân gian; không bịa Can Chi, lịch ngày, số liệu, cổ thư, trích dẫn hoặc luận đoán khi không đủ dữ kiện.
+6. Không viết câu sáo rỗng như “ai cũng nên biết”, “thu hút tài lộc”, “năng lượng tích cực” nếu không giải thích bằng nội dung cụ thể. Không lặp ý để đủ thời lượng.
+7. Lời thoại phải là văn bản hoàn chỉnh người dẫn đọc trực tiếp. Không thay lời thoại bằng ghi chú hoặc gạch đầu dòng.
+8. Hook phải đánh đúng một hiểu lầm, câu hỏi chuyên môn hoặc tình huống thực tế của chủ đề; không dùng mở đầu chung chung.
+9. Kết thúc bằng kết luận có giá trị, một hành động người xem có thể áp dụng và CTA tinh tế cho Vạn Nhật Khang.
+10. Độ dài lời thoại theo tốc độ 130–150 từ/phút; timecode liên tục, tổng thời gian khớp thời lượng.
 
-Chỉ xuất kịch bản hoàn chỉnh theo cấu trúc trên. Không giải thích lại yêu cầu, không tự nhận đã kiểm chứng nguồn bên ngoài nếu chưa thực sự có nguồn.`;
-    const d=await aiJson('/api/script',{prompt});
-    if(!d.text) throw new Error('AI chưa trả về nội dung kịch bản');
+ĐẦU RA BẮT BUỘC:
+A. TÊN VIDEO + GÓC KHAI THÁC (1 câu).
+B. NGƯỜI XEM MỤC TIÊU + GIÁ TRỊ NHẬN ĐƯỢC.
+C. LUẬN ĐỀ TRUNG TÂM.
+D. KỊCH BẢN QUAY DỰNG THEO CẢNH. Mỗi cảnh trình bày:
+- Timecode và thời lượng.
+- Mục tiêu cảnh / thông tin mới cần truyền tải.
+- Hình ảnh, bối cảnh, đạo cụ, cỡ cảnh, góc máy, chuyển động máy.
+- LỜI THOẠI NGUYÊN VĂN (đầy đủ, tự nhiên, không viết tắt).
+- Chữ xuất hiện trên màn hình.
+- Âm thanh, nhạc nền, nhịp cắt dựng.
+E. KẾT LUẬN + CTA.
+F. GHI CHÚ SẢN XUẤT: hình ảnh cần chuẩn bị, thuật ngữ cần hiển thị, dữ kiện còn cần xác minh.
+G. TỰ KIỂM: nêu ngắn các luận điểm đã triển khai và xác nhận không tự bịa dữ kiện.
 
-    $('scriptText').value=d.text;
-    p.script=d.text;
-    persist();
-    toast('AI đã tạo kịch bản chuyên sâu');
-  }catch(e){
-    toast('Không tạo được kịch bản: '+e.message);
-  }finally{
-    button.disabled=false;
-    button.textContent=oldText;
-  }
+ƯU TIÊN CHẤT LƯỢNG CHUYÊN MÔN VÀ TÍNH KHẢ THI KHI QUAY HƠN VĂN HOA. Chỉ xuất sản phẩm kịch bản hoàn chỉnh.`;
+}
+function getResearchText(){
+ const el=$('researchResult');if(!el)return '';
+ const value=el.innerText.trim();
+ if(!value||value.startsWith('Bản nghiên cứu')||value.startsWith('Đang tìm kiếm')||value.startsWith('Không thể nghiên cứu:'))return '';
+ return value;
+}
+$('makeOutline').onclick=async()=>{
+ const button=$('makeOutline'),subject=$('idea').value.trim();
+ if(!subject){toast('Hãy nhập chủ đề video trước');return}
+ const oldText=button.textContent;button.disabled=true;button.textContent='Đang biên tập kịch bản chuyên sâu...';
+ try{
+  const p=project();const prompt=buildProfessionalPrompt(subject,p,getResearchText());
+  const d=await aiJson('/api/script',{prompt});
+  if(!d.text)throw new Error('AI chưa trả về kịch bản');
+  $('scriptText').value=d.text;p.script=d.text;persist();toast('Đã tạo kịch bản sản xuất chuyên nghiệp');
+ }catch(e){toast('Không tạo được kịch bản: '+e.message)}
+ finally{button.disabled=false;button.textContent=oldText}
 };
 function renderScenes(){const p=project();$('sceneCount').textContent=p.scenes.length+' cảnh';$('sceneList').innerHTML='';if(!p.scenes.length){$('sceneList').innerHTML='<div class="empty">Chưa có phân cảnh. Nhấn “Thêm phân cảnh” để lập shot list.</div>';return}p.scenes.forEach((s,i)=>{const card=document.createElement('article');card.className='scene-card';const num=document.createElement('div');num.className='scene-num';num.textContent=String(i+1).padStart(2,'0');const body=document.createElement('div');const title=document.createElement('input');title.placeholder='Tên phân cảnh';title.value=s.title;title.oninput=()=>{s.title=title.value;persist()};const desc=document.createElement('textarea');desc.rows=2;desc.placeholder='Mô tả hình ảnh, hành động, lời thoại, góc máy...';desc.value=s.description;desc.onchange=()=>{s.description=desc.value;persist()};body.append(title,desc);const del=document.createElement('button');del.className='remove';del.textContent='×';del.title='Xóa cảnh';del.onclick=()=>{p.scenes.splice(i,1);persist();renderScenes()};card.append(num,body,del);$('sceneList').append(card)})}
 function addScene(){saveForm();project().scenes.push({title:'Phân cảnh mới',description:''});persist();renderScenes();toast('Đã thêm phân cảnh')}
@@ -108,7 +106,7 @@ $('aiEndpoint').value=aiConfig().endpoint||'';$('aiToken').value=aiConfig().toke
 $('aiConnect').onclick=async()=>{const endpoint=$('aiEndpoint').value.trim().replace(/\/$/,'');const token=$('aiToken').value.trim();if(!/^https:\/\//.test(endpoint)||!token){$('aiConnectionFeedback').textContent='Nhập URL HTTPS và mã truy cập.';return}sessionStorage.setItem(AI_CFG,JSON.stringify({endpoint,token}));try{const r=await fetch(endpoint+'/api/health');const d=await r.json();if(!r.ok||!(d.ok===true||d.success===true))throw new Error(d.error||'Không kết nối được');$('aiStatus').textContent='Máy chủ đang hoạt động';$('aiConnectionFeedback').textContent=d.configured===false?'Đã kết nối Worker nhưng máy chủ chưa cấu hình OPENAI_API_KEY.':'Kết nối thành công. Các API kịch bản, hình ảnh, giọng đọc và nhận dạng đã sẵn sàng.';toast('Đã kết nối máy chủ AI')}catch(e){$('aiStatus').textContent='Lỗi kết nối';$('aiConnectionFeedback').textContent=e.message;toast(e.message)}};
 $('runResearch').onclick=async()=>{const b=$('runResearch'),topic=$('researchTopic').value.trim();if(!topic){toast('Hãy nhập chủ đề nghiên cứu');return}aiBusy(b,true,'Đang tìm kiếm và đối chiếu nguồn...');$('researchResult').textContent='Đang tìm kiếm trên web, đọc và tổng hợp các nguồn...';try{const d=await aiJson('/api/research',{topic});$('researchResult').innerHTML='';const article=document.createElement('div');article.style.whiteSpace='pre-wrap';article.textContent=d.text||'Không có nội dung nghiên cứu.';$('researchResult').append(article);if(d.sources&&d.sources.length){const heading=document.createElement('h3');heading.textContent='Nguồn tham khảo ('+d.sources.length+')';$('researchResult').append(heading);const list=document.createElement('ol');d.sources.forEach(s=>{const li=document.createElement('li'),link=document.createElement('a');link.href=s.url;link.target='_blank';link.rel='noopener noreferrer';link.textContent=s.title;li.append(link);list.append(li)});$('researchResult').append(list)}toast('Đã hoàn tất nghiên cứu web')}catch(e){$('researchResult').textContent='Không thể nghiên cứu: '+e.message;toast(e.message)}finally{aiBusy(b,false,'⌕ Tìm kiếm & tổng hợp')}};
 $('researchToScript').onclick=()=>{const text=$('researchResult').innerText.trim();if(!text||text.startsWith('Bản nghiên cứu')||text.startsWith('Đang tìm kiếm')){toast('Hãy nghiên cứu chủ đề trước');return}const topic=$('researchTopic').value.trim();$('idea').value=topic+'\n\nTÀI LIỆU NGHIÊN CỨU ĐÃ TỔNG HỢP:\n'+text;saveForm();showView('script');toast('Đã chuyển nghiên cứu sang phần kịch bản')};
-$('aiMakeScript').onclick=async()=>{const b=$('aiMakeScript'),prompt=$('aiScriptPrompt').value.trim();if(!prompt){toast('Hãy nhập chủ đề kịch bản');return}aiBusy(b,true,'✦ Viết kịch bản');try{const d=await aiJson('/api/script',{prompt:prompt+'\n\nThông tin dự án: '+project().title+'. Thời lượng: '+project().duration+'. Tỷ lệ: '+project().ratio+'. Phong cách: '+project().visualStyle+'. Hãy viết kịch bản video hoàn chỉnh bằng tiếng Việt, có mở đầu thu hút, lời thoại tự nhiên, nội dung chính và kết thúc.'});$('aiScriptResult').value=d.text||'';toast('AI đã hoàn thành kịch bản')}catch(e){toast(e.message)}finally{aiBusy(b,false,'✦ Viết kịch bản')}};
+$('aiMakeScript').onclick=async()=>{const b=$('aiMakeScript'),topic=$('aiScriptPrompt').value.trim();if(!topic){toast('Hãy nhập chủ đề kịch bản');return}aiBusy(b,true,'Đang viết kịch bản chuyên sâu...');try{const p=project();const prompt=buildProfessionalPrompt(topic,p,getResearchText());const d=await aiJson('/api/script',{prompt});if(!d.text)throw new Error('AI chưa trả về kịch bản');$('aiScriptResult').value=d.text;toast('Đã tạo kịch bản sản xuất chuyên nghiệp')}catch(e){toast(e.message)}finally{aiBusy(b,false,'✦ Viết kịch bản')}};
 $('aiUseScript').onclick=()=>{const t=$('aiScriptResult').value.trim();if(!t){toast('Chưa có kịch bản AI');return}$('scriptText').value=t;saveForm();showView('script');toast('Đã đưa kịch bản vào dự án')};
 $('aiMakeImage').onclick=async()=>{const b=$('aiMakeImage'),prompt=$('aiImagePrompt').value.trim();if(!prompt){toast('Hãy nhập mô tả hình ảnh');return}aiBusy(b,true,'✦ Đang tạo ảnh');try{const d=await aiJson('/api/image',{prompt,size:$('aiImageSize').value,quality:'medium'});if(!d.image)throw new Error('Máy chủ không trả về ảnh');$('aiImageResult').innerHTML='';const img=document.createElement('img');img.src=d.image;img.alt='Ảnh AI Vạn Nhật Khang';img.style.maxWidth='100%';img.style.borderRadius='12px';$('aiImageResult').append(img);$('aiImageDownload').href=d.image;$('aiImageDownload').hidden=false;toast('Đã tạo hình ảnh')}catch(e){toast(e.message)}finally{aiBusy(b,false,'✦ Tạo hình ảnh')}};
 $('aiMakeSpeech').onclick=async()=>{const b=$('aiMakeSpeech'),text=$('aiSpeechText').value.trim();if(!text){toast('Hãy nhập văn bản cần đọc');return}aiBusy(b,true,'✦ Đang tạo giọng đọc');try{const d=await aiJson('/api/speech',{text,voice:$('aiVoice').value});if(!d.audio)throw new Error('Máy chủ không trả về âm thanh');$('aiAudioResult').src=d.audio;$('aiAudioResult').hidden=false;$('aiAudioDownload').href=d.audio;$('aiAudioDownload').hidden=false;toast('Đã tạo giọng đọc MP3')}catch(e){toast(e.message)}finally{aiBusy(b,false,'✦ Tạo giọng đọc MP3')}};
