@@ -7,9 +7,10 @@ Studio web tiếng Việt hỗ trợ tổ chức quy trình sản xuất video: 
 - **Tổng quan dự án:** tạo và chuyển đổi giữa các dự án.
 - **Kịch bản:** lưu ý tưởng, lời thoại, thời lượng, tỷ lệ khung hình và phong cách hình ảnh.
 - **Dàn ý mẫu:** tạo khung mở đầu – nội dung chính – kết thúc để tiếp tục biên tập.
-- **Phân cảnh:** thêm, sửa và xóa shot list.
+- **Phân cảnh:** thêm, sửa, xóa shot list hoặc tự chia kịch bản thành các phân cảnh nháp.
+- **Sao lưu & khôi phục:** xuất toàn bộ workspace dạng JSON và nhập lại bản sao lưu trên thiết bị.
 - **Thư viện video:** chọn nhiều video từ thiết bị và xem trước ngay trong trình duyệt.
-- **Phụ đề SRT:** nhập tệp SRT, kiểm tra định dạng cơ bản và tải phụ đề.
+- **Phụ đề SRT:** nhập tệp SRT, tạo phụ đề nháp với thời gian ước tính từ kịch bản, kiểm tra định dạng cơ bản và tải phụ đề.
 - **Hậu kỳ:** checklist rà soát đoạn thừa/lặp, âm thanh, phụ đề, khung đen/mờ và cấu hình đầu ra.
 - **Xuất dữ liệu dự án:** tải thông tin dự án dạng JSON.
 - **Lưu cục bộ:** dự án được lưu trong localStorage của trình duyệt trên thiết bị đang sử dụng.
