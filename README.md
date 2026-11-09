@@ -42,3 +42,15 @@ Video được chọn chỉ tạo URL xem trước trong trình duyệt; ứng d
 ---
 **VẠN NHẬT KHANG**  
 *Nâng Tầm Giá Trị – Kiến Tạo Phong Thuỷ – Phụng Sự Tâm Linh Việt*
+
+## AI Studio và backend
+
+Giao diện có thêm tab **AI Studio** để kết nối máy chủ AI:
+- Tạo kịch bản tiếng Việt qua OpenAI Responses API.
+- Tạo ảnh PNG qua Images API.
+- Tạo giọng đọc MP3 qua Audio Speech API.
+- Nhận dạng lời nói tiếng Việt từ tệp audio/video qua Audio Transcriptions API.
+
+Để kích hoạt các chức năng này, làm theo hướng dẫn tại [CLOUDFLARE_SETUP.md](CLOUDFLARE_SETUP.md). Backend Worker nằm ở `worker.js`; cấu hình mẫu ở `wrangler.toml`. API key nhà cung cấp và mã APP_ACCESS_TOKEN phải được đặt trong Cloudflare Worker Secrets, tuyệt đối không đưa vào GitHub hoặc trình duyệt.
+
+**Chưa tích hợp:** tạo video chuyển động từ prompt và render MP4 nhiều clip bằng FFmpeg. Hai phần này cần nhà cung cấp video AI và máy chủ render riêng; không được giả lập là đã hoạt động.
