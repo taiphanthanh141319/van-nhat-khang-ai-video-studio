@@ -33,6 +33,13 @@ export default {
     const data=await resp.json();if(!resp.ok)return json({error:data.error?.message||"Lỗi dịch vụ tạo kịch bản."},resp.status,allowed);
     return json({text:extractText(data)},200,allowed);
    }
+   if(url.pathname==="/api/research"){
+    const body=await request.json();const topic=String(body.topic||"").trim();if(!topic||topic.length>3000)return json({error:"Chủ đề nghiên cứu trống hoặc quá dài."},400,allowed);
+    const resp=await fetch("https://api.openai.com/v1/responses",{method:"POST",headers:{Authorization:"Bearer "+env.OPENAI_API_KEY,"Content-Type":"application/json"},body:JSON.stringify({model:env.TEXT_MODEL||"gpt-5-mini",tools:[{type:"web_search"}],tool_choice:"auto",instructions:"Bạn là chuyên viên nghiên cứu và kiểm chứng thông tin cho Vạn Nhật Khang. Bắt buộc sử dụng tìm kiếm web để tra cứu chủ đề. Đọc và đối chiếu nhiều nguồn độc lập; ưu tiên cơ quan chính thức, trường đại học, sách/tài liệu chuyên ngành có thể truy cập, báo chí uy tín. Không bịa nguồn, số liệu, ngày tháng hoặc trích dẫn. Phân biệt dữ kiện có nguồn, quan điểm/trường phái, truyền thống dân gian và suy luận. Nếu nguồn mâu thuẫn, nêu rõ. Trả lời tiếng Việt với cấu trúc: 1) Tóm tắt kết luận; 2) Các luận điểm và giải thích sâu; 3) Điểm còn tranh luận/giới hạn; 4) Ứng dụng thực tế; 5) Danh sách nguồn tham khảo có tên, URL và ngày truy cập nếu có. Mọi thông tin quan trọng cần gắn nguồn ngay trong nội dung.",input:"Nghiên cứu và tổng hợp chuyên sâu chủ đề: "+topic})});
+    const data=await resp.json();if(!resp.ok)return json({error:data.error?.message||"Lỗi tìm kiếm và tổng hợp web."},resp.status,allowed);
+    const sources=[];for(const item of data.output||[])for(const part of item.content||[])for(const ann of part.annotations||[])if(ann.type==="url_citation"&&ann.url&&!sources.some(s=>s.url===ann.url))sources.push({title:ann.title||ann.url,url:ann.url});
+    return json({text:extractText(data),sources},200,allowed);
+   }
    if(url.pathname==="/api/image"){
     const body=await request.json();const prompt=String(body.prompt||"").trim();if(!prompt||prompt.length>4000)return json({error:"Mô tả hình ảnh trống hoặc quá dài."},400,allowed);
     const resp=await fetch("https://api.openai.com/v1/images/generations",{method:"POST",headers:{Authorization:"Bearer "+env.OPENAI_API_KEY,"Content-Type":"application/json"},body:JSON.stringify({model:env.IMAGE_MODEL||"gpt-image-2",prompt,size:body.size||"1024x1536",quality:body.quality||"medium",output_format:"png"})});
