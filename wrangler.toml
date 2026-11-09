@@ -1,4 +1,4 @@
-name = "van-nhat-khang-ai-video-studio-api"
+name = "van-nhat-khang-ai-api"
 main = "worker.js"
 compatibility_date = "2026-11-09"
 workers_dev = true
