@@ -246,17 +246,24 @@ export default {
         const body = await readJson(request);
         const text = String(body.text || "").trim();
         if (!text || text.length > 12000) return json({ error: "Văn bản trống hoặc vượt quá 12.000 ký tự." }, 400, responseOrigin);
-        const result = await openAIJsonEndpoint(env, "/v1/audio/speech", {
-          model: env.TTS_MODEL || "gpt-4o-mini-tts",
-          voice: body.voice || "coral",
-          input: text,
-          instructions: "Đọc tiếng Việt tự nhiên, phát âm rõ, nhịp vừa phải, giọng ấm và chuyên nghiệp.",
-          response_format: "mp3"
+        const speechResponse = await fetch("https://api.openai.com/v1/audio/speech", {
+          method: "POST",
+          headers: { "Authorization": "Bearer " + env.OPENAI_API_KEY, "Content-Type": "application/json" },
+          body: JSON.stringify({
+            model: env.TTS_MODEL || "gpt-4o-mini-tts",
+            voice: body.voice || "coral",
+            input: text,
+            instructions: "Đọc tiếng Việt tự nhiên, phát âm rõ, nhịp vừa phải, giọng ấm và chuyên nghiệp.",
+            response_format: "mp3"
+          })
         });
-        if (!result.response.ok) {
-          return json({ error: result.data.error && result.data.error.message || "Lỗi tạo giọng đọc HTTP " + result.response.status }, result.response.status, responseOrigin);
+        if (!speechResponse.ok) {
+          const rawError = await speechResponse.text();
+          let errorData = {};
+          try { errorData = JSON.parse(rawError); } catch {}
+          return json({ error: errorData.error && errorData.error.message || rawError.slice(0, 800) || "Lỗi tạo giọng đọc." }, speechResponse.status, responseOrigin);
         }
-        const bytes = new Uint8Array(await result.response.arrayBuffer());
+        const bytes = new Uint8Array(await speechResponse.arrayBuffer());
         let binary = "";
         for (let i = 0; i < bytes.length; i += 0x8000) binary += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
         return json({ audio: "data:audio/mpeg;base64," + btoa(binary) }, 200, responseOrigin);
