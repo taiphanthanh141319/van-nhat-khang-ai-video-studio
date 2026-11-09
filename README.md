@@ -1,31 +1,42 @@
 # Vạn Nhật Khang AI Video Studio
 
-**Vạn Nhật Khang AI Video Studio** là dự án xây dựng không gian sáng tạo và hậu kỳ video tiếng Việt, hướng đến quy trình làm video thuận tiện từ ý tưởng đến sản phẩm hoàn chỉnh.
+Studio web tiếng Việt hỗ trợ tổ chức quy trình sản xuất video: quản lý dự án, phát triển kịch bản, lập shot list, xem trước tư liệu video, biên tập phụ đề và chuẩn bị checklist hậu kỳ.
 
-## Mục tiêu
-- Hỗ trợ chuẩn bị ý tưởng, kịch bản và prompt video.
-- Quản lý và xem trước tư liệu video.
-- Soạn, chỉnh sửa và xuất phụ đề định dạng SRT.
-- Hỗ trợ checklist hậu kỳ: cắt đoạn thừa/lặp, làm sạch âm thanh, kiểm tra khung hình đen hoặc mờ.
-- Chuẩn bị quy trình xuất video MP4 theo các tỷ lệ 9:16, 16:9 và 4:5.
+## Bản hiện tại có gì?
 
-## Lộ trình phát triển
-1. Xây dựng giao diện Studio tiếng Việt.
-2. Bổ sung quản lý dự án và thư viện tư liệu.
-3. Tích hợp dịch vụ AI tạo hình ảnh/video và giọng đọc tiếng Việt.
-4. Bổ sung công cụ phụ đề, đồng bộ âm thanh và hậu kỳ.
-5. Tích hợp backend xử lý và xuất MP4.
+- **Tổng quan dự án:** tạo và chuyển đổi giữa các dự án.
+- **Kịch bản:** lưu ý tưởng, lời thoại, thời lượng, tỷ lệ khung hình và phong cách hình ảnh.
+- **Dàn ý mẫu:** tạo khung mở đầu – nội dung chính – kết thúc để tiếp tục biên tập.
+- **Phân cảnh:** thêm, sửa và xóa shot list.
+- **Thư viện video:** chọn nhiều video từ thiết bị và xem trước ngay trong trình duyệt.
+- **Phụ đề SRT:** nhập tệp SRT, kiểm tra định dạng cơ bản và tải phụ đề.
+- **Hậu kỳ:** checklist rà soát đoạn thừa/lặp, âm thanh, phụ đề, khung đen/mờ và cấu hình đầu ra.
+- **Xuất dữ liệu dự án:** tải thông tin dự án dạng JSON.
+- **Lưu cục bộ:** dự án được lưu trong localStorage của trình duyệt trên thiết bị đang sử dụng.
 
-## Công nghệ dự kiến
-- HTML, CSS và JavaScript cho giao diện web.
-- Backend xử lý video bằng FFmpeg.
-- Các dịch vụ AI bên ngoài cho tạo video, chuyển văn bản thành giọng nói và xử lý nội dung khi được cấu hình.
+## Chạy ứng dụng
 
-## Chạy dự án
-Khi các tệp giao diện đã được thêm vào repository, có thể mở `index.html` trong trình duyệt hoặc bật GitHub Pages tại **Settings → Pages** để xuất bản bản web tĩnh.
+Có thể mở `index.html` trực tiếp trong trình duyệt. Để có đường dẫn web công khai:
 
-## Lưu ý bảo mật
-Không đưa API key, mật khẩu hoặc thông tin bí mật vào repository công khai. Các dịch vụ AI cần được kết nối qua backend an toàn.
+1. Mở repository trên GitHub.
+2. Vào **Settings → Pages**.
+3. Trong phần **Build and deployment**, chọn **Source: GitHub Actions**.
+4. Workflow tại `.github/workflows/pages.yml` sẽ triển khai website sau khi chạy thành công.
+
+Đường dẫn Pages dự kiến: https://taiphanthanh141319.github.io/van-nhat-khang-ai-video-studio/
+
+## Giới hạn kỹ thuật hiện tại
+
+Đây là bản frontend tĩnh. Các tính năng sau **chưa được tích hợp**: sinh video bằng mô hình AI, tạo giọng đọc AI, nhận dạng lời nói tự động, đồng bộ phụ đề tự động, xử lý âm thanh nâng cao và render MP4 bằng FFmpeg. Những chức năng này cần backend và/hoặc tài khoản API của nhà cung cấp phù hợp.
+
+Video được chọn chỉ tạo URL xem trước trong trình duyệt; ứng dụng không tự tải video lên GitHub hay máy chủ. Dữ liệu dự án lưu trong trình duyệt có thể mất nếu người dùng xóa dữ liệu trang web, vì vậy hãy xuất JSON để sao lưu.
+
+## Cấu trúc
+
+- `index.html` — giao diện ứng dụng.
+- `styles.css` — giao diện responsive.
+- `app.js` — quản lý dự án, phân cảnh, video xem trước và phụ đề.
+- `.github/workflows/pages.yml` — quy trình triển khai GitHub Pages.
 
 ---
 **VẠN NHẬT KHANG**  
