@@ -102,9 +102,62 @@ loadForm();renderProjects();updateStats();
 const freeCanvas=$('freeCanvas'),freeCtx=freeCanvas.getContext('2d');let freeBitmaps=[];
 $('freeImages').onchange=async e=>{freeBitmaps=[];for(const f of Array.from(e.target.files||[])){try{freeBitmaps.push(await createImageBitmap(f))}catch(err){}}$('freeImageNames').textContent=freeBitmaps.length+' ảnh đã sẵn sàng';drawFreeFrame(0);e.target.value=''};
 function freeDimensions(){const v=$('freeRatio').value;return v==='landscape'?[1920,1080]:v==='square'?[1080,1080]:[1080,1920]}
-function drawFreeFrame(index){if(!freeBitmaps.length)return;const [w,h]=freeDimensions();freeCanvas.width=w;freeCanvas.height=h;const img=freeBitmaps[index%freeBitmaps.length];freeCtx.fillStyle='#100d15';freeCtx.fillRect(0,0,w,h);const cover=Math.max(w/img.width,h/img.height);freeCtx.save();freeCtx.globalAlpha=.4;freeCtx.filter='blur(24px)';freeCtx.drawImage(img,(w-img.width*cover)/2,(h-img.height*cover)/2,img.width*cover,img.height*cover);freeCtx.restore();const fit=Math.min(w/img.width,h/img.height),dw=img.width*fit,dh=img.height*fit;freeCtx.drawImage(img,(w-dw)/2,(h-dh)/2,dw,dh);const g=freeCtx.createLinearGradient(0,h*.65,0,h);g.addColorStop(0,'rgba(0,0,0,0)');g.addColorStop(1,'rgba(0,0,0,.82)');freeCtx.fillStyle=g;freeCtx.fillRect(0,0,w,h);const title=$('freeTitle').value.trim();freeCtx.textAlign='center';freeCtx.fillStyle='#f8e5b0';freeCtx.font='bold '+Math.round(w*.055)+'px Georgia';if(title){const words=title.split(/\s+/);let line='',lines=[];for(const word of words){const t=line?line+' '+word:word;if(freeCtx.measureText(t).width>w*.8&&line){lines.push(line);line=word}else line=t}if(line)lines.push(line);lines.slice(0,3).forEach((l,i)=>freeCtx.fillText(l,w/2,h*.78+i*w*.07,w*.82))}freeCtx.fillStyle='#e7c987';freeCtx.font='bold '+Math.round(w*.026)+'px Arial';freeCtx.fillText($('freeFooter').value,w/2,h*.95,w*.9);freeCtx.strokeStyle='#d9b76c';freeCtx.lineWidth=Math.max(2,w*.002);freeCtx.beginPath();freeCtx.moveTo(w*.1,h*.91);freeCtx.lineTo(w*.9,h*.91);freeCtx.stroke()}
-$('freePreview').onclick=()=>{if(!freeBitmaps.length)return toast('Hãy chọn ảnh trước');drawFreeFrame(0);toast('Đã xem trước')};
-$('freeRender').onclick=async()=>{if(!freeBitmaps.length)return toast('Hãy chọn ảnh trước');if(!window.MediaRecorder||!freeCanvas.captureStream)return toast('Hãy dùng Chrome hoặc Edge phiên bản mới');const b=$('freeRender');b.disabled=true;let stream;try{const [w,h]=freeDimensions();freeCanvas.width=w;freeCanvas.height=h;stream=freeCanvas.captureStream(30);let audio=null,ctx=null;if($('freeAudio').files[0]){audio=new Audio(URL.createObjectURL($('freeAudio').files[0]));audio.loop=true;ctx=new AudioContext();const src=ctx.createMediaElementSource(audio),dest=ctx.createMediaStreamDestination();src.connect(dest);src.connect(ctx.destination);dest.stream.getAudioTracks().forEach(t=>stream.addTrack(t));await ctx.resume();await audio.play()}const mime=['video/webm;codecs=vp9,opus','video/webm;codecs=vp8,opus','video/webm'].find(x=>MediaRecorder.isTypeSupported(x));const rec=new MediaRecorder(stream,mime?{mimeType:mime,videoBitsPerSecond:8000000}:undefined),chunks=[];rec.ondataavailable=e=>{if(e.data.size)chunks.push(e.data)};const stopped=new Promise(resolve=>rec.onstop=resolve);rec.start(250);const sec=Number($('freeSeconds').value)||4;for(let i=0;i<freeBitmaps.length;i++){const start=performance.now();while(performance.now()-start<sec*1000){drawFreeFrame(i);await new Promise(r=>setTimeout(r,33))}}rec.stop();await stopped;if(audio){audio.pause();audio.src=''}const blob=new Blob(chunks,{type:rec.mimeType||'video/webm'}),url=URL.createObjectURL(blob);$('freeResult').src=url;$('freeResult').style.display='block';$('freeDownload').href=url;$('freeDownload').hidden=false;$('freeStatus').textContent='Hoàn tất '+freeBitmaps.length+' ảnh · '+(freeBitmaps.length*sec)+' giây · '+(blob.size/1048576).toFixed(1)+' MB. Video được dựng cục bộ, không dùng API.';toast('Đã dựng video')}catch(err){$('freeStatus').textContent='Lỗi dựng video: '+err.message;toast(err.message)}finally{if(stream)stream.getTracks().forEach(t=>t.stop());b.disabled=false}};
+function drawFreeFrame(index,progress=0,previousIndex=null){
+ if(!freeBitmaps.length)return;
+ const [w,h]=freeDimensions();freeCanvas.width=w;freeCanvas.height=h;
+ const img=freeBitmaps[index%freeBitmaps.length];
+ freeCtx.fillStyle='#100d15';freeCtx.fillRect(0,0,w,h);
+ function paintImage(source,alpha=1,zoom=1,shift=0){
+  const cover=Math.max(w/source.width,h/source.height);
+  freeCtx.save();freeCtx.globalAlpha=alpha;freeCtx.filter='blur(24px)';
+  freeCtx.drawImage(source,(w-source.width*cover)/2,(h-source.height*cover)/2,source.width*cover,source.height*cover);freeCtx.restore();
+  const fit=Math.max(w/source.width,h/source.height)*zoom,dw=source.width*fit,dh=source.height*fit;
+  freeCtx.save();freeCtx.globalAlpha=alpha;freeCtx.drawImage(source,(w-dw)/2+shift,(h-dh)/2,dw,dh);freeCtx.restore();
+ }
+ const zoom=1.02+progress*.075,shift=Math.sin(progress*Math.PI)*w*.012;
+ paintImage(img,1,zoom,shift);
+ if(previousIndex!==null&&progress<.22){const prev=freeBitmaps[previousIndex%freeBitmaps.length];paintImage(prev,Math.max(0,1-progress/.22),1.05,0)}
+ const g=freeCtx.createLinearGradient(0,h*.62,0,h);g.addColorStop(0,'rgba(0,0,0,0)');g.addColorStop(1,'rgba(0,0,0,.84)');freeCtx.fillStyle=g;freeCtx.fillRect(0,0,w,h);
+ const title=$('freeTitle').value.trim()||'VẠN NHẬT KHANG';
+ freeCtx.textAlign='center';freeCtx.fillStyle='#f8e5b0';freeCtx.font='bold '+Math.round(w*.055)+'px Georgia';
+ const words=title.split(/\s+/);let line='',lines=[];for(const word of words){const t=line?line+' '+word:word;if(freeCtx.measureText(t).width>w*.8&&line){lines.push(line);line=word}else line=t}if(line)lines.push(line);
+ lines.slice(0,3).forEach((l,i)=>freeCtx.fillText(l,w/2,h*.77+i*w*.07,w*.82));
+ freeCtx.fillStyle='#e7c987';freeCtx.font='bold '+Math.round(w*.026)+'px Arial';freeCtx.fillText($('freeFooter').value||'VẠN NHẬT KHANG · PHONG THUỶ MỆNH LÝ ỨNG DỤNG',w/2,h*.95,w*.9);
+ freeCtx.strokeStyle='#d9b76c';freeCtx.lineWidth=Math.max(2,w*.002);freeCtx.beginPath();freeCtx.moveTo(w*.1,h*.91);freeCtx.lineTo(w*.9,h*.91);freeCtx.stroke();
+}\n$('freePreview').onclick=()=>{if(!freeBitmaps.length)return toast('Hãy chọn ảnh trước');drawFreeFrame(0);toast('Đã xem trước')};
+$('freeRender').onclick=async()=>{
+ if(!freeBitmaps.length)return toast('Hãy chọn ảnh trước');
+ if(!window.MediaRecorder||!freeCanvas.captureStream)return toast('Hãy dùng Chrome hoặc Edge phiên bản mới');
+ const b=$('freeRender');b.disabled=true;b.textContent='ĐANG TỰ ĐỘNG DỰNG...';let stream,audio=null,ctx=null;
+ try{
+  const [w,h]=freeDimensions();freeCanvas.width=w;freeCanvas.height=h;stream=freeCanvas.captureStream(30);
+  if($('freeAudio').files[0]){
+   audio=new Audio(URL.createObjectURL($('freeAudio').files[0]));audio.loop=true;ctx=new AudioContext();
+   const src=ctx.createMediaElementSource(audio),dest=ctx.createMediaStreamDestination();src.connect(dest);src.connect(ctx.destination);
+   dest.stream.getAudioTracks().forEach(t=>stream.addTrack(t));await ctx.resume();await audio.play();
+  }
+  const mime=['video/webm;codecs=vp9,opus','video/webm;codecs=vp8,opus','video/webm'].find(x=>MediaRecorder.isTypeSupported(x));
+  const rec=new MediaRecorder(stream,mime?{mimeType:mime,videoBitsPerSecond:8000000}:undefined),chunks=[];
+  rec.ondataavailable=e=>{if(e.data.size)chunks.push(e.data)};const stopped=new Promise(resolve=>rec.onstop=resolve);rec.start(250);
+  const sec=Number($('freeSeconds').value)||4,transition=.7,fps=30,total=freeBitmaps.length*sec;
+  $('freeStatus').textContent='Đang tự động ghép ảnh, tạo chuyển cảnh hòa trộn và hiệu ứng zoom điện ảnh...';
+  for(let i=0;i<freeBitmaps.length;i++){
+   const start=performance.now(),duration=sec*1000;
+   while(performance.now()-start<duration){
+    const elapsed=performance.now()-start,progress=Math.min(1,elapsed/duration),previous=i>0?i-1:null;
+    drawFreeFrame(i,progress,(previous!==null&&elapsed<transition*1000)?previous:null);
+    $('freeStatus').textContent='Đang dựng cảnh '+(i+1)+'/'+freeBitmaps.length+' · '+Math.round(((i+progress)/freeBitmaps.length)*100)+'%';
+    await new Promise(r=>setTimeout(r,1000/fps));
+   }
+  }
+  rec.stop();await stopped;if(audio){audio.pause();audio.src='';}
+  const blob=new Blob(chunks,{type:rec.mimeType||'video/webm'}),url=URL.createObjectURL(blob);
+  $('freeResult').src=url;$('freeResult').style.display='block';$('freeDownload').href=url;$('freeDownload').hidden=false;
+  $('freeStatus').textContent='Hoàn tất: '+freeBitmaps.length+' ảnh · '+total+' giây · chuyển cảnh và zoom tự động · '+(blob.size/1048576).toFixed(1)+' MB. Dựng hoàn toàn trên thiết bị, miễn phí, không dùng API.';
+  toast('Đã tự động dựng xong video');
+ }catch(err){$('freeStatus').textContent='Lỗi dựng video: '+err.message;toast(err.message)}
+ finally{if(stream)stream.getTracks().forEach(t=>t.stop());if(ctx)await ctx.close().catch(()=>{});b.disabled=false;b.textContent='✦ TỰ ĐỘNG DỰNG VIDEO MIỄN PHÍ'}
+};
 $('freeRatio').onchange=()=>drawFreeFrame(0);$('freeTitle').oninput=()=>drawFreeFrame(0);$('freeFooter').oninput=()=>drawFreeFrame(0);
 
 const AI_CFG='vnk-ai-config-v1';
