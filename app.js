@@ -14,6 +14,8 @@ function newProject(){saveForm();const p={id:makeId(),title:'Dự án mới',dur
 $('newProject').onclick=newProject;$('dashboardNew').onclick=newProject;
 ['projectTitle','duration','ratio','visualStyle','idea','scriptText'].forEach(id=>$(id).addEventListener('change',()=>{saveForm();$('welcomeTitle').textContent=project().title}));
 $('saveScript').onclick=()=>{saveForm();toast('Đã lưu kịch bản trên thiết bị')};
+$('manualScript').onclick=()=>{showView('script');$('scriptText').focus();$('scriptFeedback').textContent='Chế độ thủ công đang bật: anh có thể tự viết hoặc dán kịch bản, chia thành phân cảnh và lưu ngay trên thiết bị. Không gọi OpenAI API, không mất credit.';toast('Đã chuyển sang nhập kịch bản thủ công')};
+
 function buildProfessionalPrompt(topic,p,researchText){
  return `VAI TRÒ: Bạn là biên kịch trưởng, biên tập viên chuyên ngành và đạo diễn video của Phong Thủy Và Đồ Thờ Vạn Nhật Khang.
 
