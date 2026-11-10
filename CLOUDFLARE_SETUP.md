@@ -44,3 +44,25 @@ Các API trên sử dụng OpenAI API và có thể phát sinh phí. Tài khoả
 - Tự động tải video gốc lên máy chủ.
 
 Các phần này cần dịch vụ video AI và hạ tầng render/lưu trữ riêng; giao diện không giả lập rằng chúng đã hoạt động.
+
+
+## 4. Kết nối ComfyUI và các model mã nguồn mở
+
+Để bật tab AI Engines, cần có máy GPU chạy ComfyUI và Cloudflare Tunnel bảo vệ bằng Cloudflare Access.
+
+Trong Worker van-nhat-khang-ai-api, thêm:
+- Variable COMFYUI_URL: URL HTTPS của hostname tunnel trỏ tới ComfyUI.
+- Secret COMFYUI_ACCESS_CLIENT_ID: Client ID của Cloudflare Access Service Token.
+- Secret COMFYUI_ACCESS_CLIENT_SECRET: Client Secret tương ứng.
+
+Có thể dùng COMFYUI_API_TOKEN nếu backend ComfyUI có lớp Bearer token riêng. Không bật public access không xác thực cho cổng ComfyUI.
+
+Sau khi cấu hình, Deploy Worker và vào tab AI Engines để kiểm tra. Các endpoint proxy:
+- GET /api/comfy/health
+- POST /api/comfy/queue
+- GET /api/comfy/history?prompt_id=...
+- GET /api/comfy/view?filename=...&subfolder=...&type=...
+
+Workflow cần xuất từ ComfyUI bằng Save (API Format). Model FLUX, Stable Diffusion, Wan2.1 và LTX-Video phải được cài trên máy GPU. Hướng dẫn đầy đủ tại AI_ENGINES_SETUP.md.
+
+Lưu ý: Worker không cài hoặc chạy model, không có GPU và không render video. FFmpeg cần chạy trên máy render/container riêng. Không phát sinh thay đổi Secret hiện tại khi chưa được cấu hình thủ công.
