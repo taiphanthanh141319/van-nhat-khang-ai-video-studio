@@ -166,6 +166,84 @@ export default {
         error: "Mã truy cập không hợp lệ. APP_ACCESS_TOKEN trong ứng dụng phải trùng hoàn toàn với Secret trên Cloudflare."
       }, 401, responseOrigin);
     }
+    // ComfyUI proxy: secrets and private origin remain in Worker configuration.
+    if (url.pathname.startsWith("/api/comfy/")) {
+      const base = String(env.COMFYUI_URL || "").trim().replace(/\/+$/, "");
+      if (!base || !/^https:\/\//i.test(base)) {
+        return json({ error: "Chưa cấu hình COMFYUI_URL dạng HTTPS trong Worker." }, 503, responseOrigin);
+      }
+      const headers = { "Content-Type": "application/json" };
+      if (env.COMFYUI_ACCESS_CLIENT_ID && env.COMFYUI_ACCESS_CLIENT_SECRET) {
+        headers["CF-Access-Client-Id"] = env.COMFYUI_ACCESS_CLIENT_ID;
+        headers["CF-Access-Client-Secret"] = env.COMFYUI_ACCESS_CLIENT_SECRET;
+      }
+      if (env.COMFYUI_API_TOKEN) headers["Authorization"] = "Bearer " + env.COMFYUI_API_TOKEN;
+
+      if (url.pathname === "/api/comfy/health" && request.method === "GET") {
+        const upstream = await fetch(base + "/system_stats", { headers });
+        if (!upstream.ok) return json({ ok: false, message: "ComfyUI phản hồi HTTP " + upstream.status }, 502, responseOrigin);
+        const stats = await upstream.json();
+        return json({ ok: true, message: "Đã kết nối ComfyUI.", system: stats }, 200, responseOrigin);
+      }
+
+      if (url.pathname === "/api/comfy/queue" && request.method === "POST") {
+        const body = await readJson(request);
+        if (!body.workflow || typeof body.workflow !== "object" || Array.isArray(body.workflow)) {
+          return json({ error: "Workflow phải là JSON object ở định dạng ComfyUI API." }, 400, responseOrigin);
+        }
+        const engine = String(body.engine || "");
+        if (!["flux", "sd", "wan", "ltx"].includes(engine)) {
+          return json({ error: "Engine không được hỗ trợ." }, 400, responseOrigin);
+        }
+        const upstream = await fetch(base + "/prompt", {
+          method: "POST",
+          headers,
+          body: JSON.stringify({ prompt: body.workflow })
+        });
+        const raw = await upstream.text();
+        let data = {};
+        try { data = raw ? JSON.parse(raw) : {}; } catch {}
+        if (!upstream.ok) return json({ error: data.error && data.error.message || data.error || "ComfyUI queue HTTP " + upstream.status, details: data }, 502, responseOrigin);
+        if (!data.prompt_id) return json({ error: "ComfyUI không trả prompt_id.", details: data }, 502, responseOrigin);
+        return json({ prompt_id: data.prompt_id, number: data.number, engine }, 200, responseOrigin);
+      }
+
+      if (url.pathname === "/api/comfy/history" && request.method === "GET") {
+        const id = String(url.searchParams.get("prompt_id") || "");
+        if (!/^[a-zA-Z0-9-]{8,100}$/.test(id)) return json({ error: "prompt_id không hợp lệ." }, 400, responseOrigin);
+        const upstream = await fetch(base + "/history/" + encodeURIComponent(id), { headers: { ...headers, "Content-Type": "application/json" } });
+        const raw = await upstream.text();
+        if (!upstream.ok) return json({ error: "Không đọc được lịch sử ComfyUI: HTTP " + upstream.status }, 502, responseOrigin);
+        let data = {};
+        try { data = raw ? JSON.parse(raw) : {}; } catch { return json({ error: "ComfyUI trả lịch sử không hợp lệ." }, 502, responseOrigin); }
+        return json({ history: data }, 200, responseOrigin);
+      }
+
+      if (url.pathname === "/api/comfy/view" && request.method === "GET") {
+        const filename = String(url.searchParams.get("filename") || "");
+        const subfolder = String(url.searchParams.get("subfolder") || "");
+        const type = String(url.searchParams.get("type") || "output");
+        if (!filename || filename.includes("/") || filename.includes("\\") || filename.includes("..")) {
+          return json({ error: "Tên tệp output không hợp lệ." }, 400, responseOrigin);
+        }
+        if (subfolder.includes("..") || subfolder.startsWith("/") || subfolder.includes("\\")) {
+          return json({ error: "Thư mục output không hợp lệ." }, 400, responseOrigin);
+        }
+        if (!["output", "temp", "input"].includes(type)) return json({ error: "Loại output không hợp lệ." }, 400, responseOrigin);
+        const params = new URLSearchParams({ filename, subfolder, type });
+        const upstream = await fetch(base + "/view?" + params.toString(), { headers });
+        if (!upstream.ok) return json({ error: "Không tải được output ComfyUI: HTTP " + upstream.status }, 502, responseOrigin);
+        const responseHeaders = {
+          ...corsHeaders(responseOrigin),
+          "Content-Type": upstream.headers.get("Content-Type") || "application/octet-stream",
+          "Content-Disposition": "inline; filename*=UTF-8''" + encodeURIComponent(filename),
+          "Cache-Control": "private, max-age=60"
+        };
+        return new Response(upstream.body, { status: 200, headers: responseHeaders });
+      }
+      return json({ error: "ComfyUI endpoint không tồn tại hoặc phương thức không hợp lệ." }, 404, responseOrigin);
+    }
+
     if (!env.OPENAI_API_KEY) {
       return json({ error: "Cloudflare chưa cấu hình Secret OPENAI_API_KEY." }, 503, responseOrigin);
     }

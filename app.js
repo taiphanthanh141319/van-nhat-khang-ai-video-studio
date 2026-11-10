@@ -181,3 +181,61 @@ $('aiMakeImage').onclick=async()=>{const b=$('aiMakeImage'),prompt=$('aiImagePro
 $('aiMakeSpeech').onclick=async()=>{const b=$('aiMakeSpeech'),text=$('aiSpeechText').value.trim();if(!text){toast('Hãy nhập văn bản cần đọc');return}aiBusy(b,true,'✦ Đang tạo giọng đọc');try{const d=await aiJson('/api/speech',{text,voice:$('aiVoice').value});if(!d.audio)throw new Error('Máy chủ không trả về âm thanh');$('aiAudioResult').src=d.audio;$('aiAudioResult').hidden=false;$('aiAudioDownload').href=d.audio;$('aiAudioDownload').hidden=false;toast('Đã tạo giọng đọc MP3')}catch(e){toast(e.message)}finally{aiBusy(b,false,'✦ Tạo giọng đọc MP3')}};
 $('aiTranscribe').onclick=async()=>{const b=$('aiTranscribe'),file=$('aiTranscribeFile').files[0];if(!file){toast('Hãy chọn tệp âm thanh hoặc video');return}if(file.size>24*1024*1024){toast('Tệp vượt giới hạn 24 MB');return}aiBusy(b,true,'✦ Đang nhận dạng');try{const d=await aiUpload('/api/transcribe',file);$('aiTranscriptResult').value=d.text||'';toast('Đã nhận dạng lời nói')}catch(e){toast(e.message)}finally{aiBusy(b,false,'✦ Nhận dạng tiếng Việt')}};
 $('aiTranscriptToScript').onclick=()=>{const t=$('aiTranscriptResult').value.trim();if(!t){toast('Chưa có văn bản nhận dạng');return}$('scriptText').value=t;saveForm();showView('script');toast('Đã đưa bản nhận dạng vào kịch bản')};
+
+
+// OPEN-SOURCE AI ENGINES — ComfyUI orchestration for FLUX, SD, Wan2.1 and LTX.
+let comfyLastPromptId='';
+$('comfyCheck').onclick=async()=>{
+ const b=$('comfyCheck');aiBusy(b,true,'Checking ComfyUI…');
+ try{
+  const c=aiConfig();if(!c.token)throw new Error('Hãy cấu hình APP_ACCESS_TOKEN trong AI Studio trước.');
+  const r=await fetch(aiUrl('/api/comfy/health'),{headers:{'X-App-Token':c.token}});
+  const d=await readApiResponse(r);
+  $('comfyStatus').textContent=d.ok?'ComfyUI sẵn sàng':'Chưa sẵn sàng';
+  $('comfyFeedback').textContent=d.message||'Đã kết nối tới ComfyUI.';
+  toast('Kiểm tra ComfyUI hoàn tất');
+ }catch(e){$('comfyStatus').textContent='Chưa kết nối';$('comfyFeedback').textContent=e.message;toast(e.message)}
+ finally{aiBusy(b,false,'Kiểm tra ComfyUI')}
+};
+$('comfyQueue').onclick=async()=>{
+ const b=$('comfyQueue'),raw=$('comfyWorkflow').value.trim();
+ if(!raw){toast('Hãy dán workflow API JSON từ ComfyUI');return}
+ let workflow;try{workflow=JSON.parse(raw)}catch(e){toast('Workflow JSON không hợp lệ: '+e.message);return}
+ if(!workflow||typeof workflow!=='object'||Array.isArray(workflow)){toast('Workflow phải là JSON object ở định dạng API');return}
+ aiBusy(b,true,'Đang gửi tác vụ tới GPU…');
+ try{
+  const d=await aiJson('/api/comfy/queue',{workflow,engine:$('comfyEngine').value});
+  if(!d.prompt_id)throw new Error(d.error||'ComfyUI không trả prompt_id');
+  comfyLastPromptId=d.prompt_id;$('comfyPromptId').textContent='Prompt ID: '+comfyLastPromptId;
+  $('comfyFeedback').textContent='Đã xếp hàng tác vụ trên ComfyUI. GPU sẽ xử lý theo hàng đợi.';
+  $('comfyOutput').textContent='Đang chờ xử lý. Nhấn “Kiểm tra tiến độ” để lấy trạng thái.';
+  toast('Đã gửi workflow tới ComfyUI');
+ }catch(e){$('comfyFeedback').textContent=e.message;toast(e.message)}
+ finally{aiBusy(b,false,'Gửi tác vụ đến GPU')}
+};
+$('comfyHistory').onclick=async()=>{
+ const id=comfyLastPromptId||$('comfyPromptId').textContent.replace('Prompt ID: ','').trim();
+ if(!id){toast('Chưa có Prompt ID để kiểm tra');return}
+ const b=$('comfyHistory');aiBusy(b,true,'Đang kiểm tra…');
+ try{
+  const c=aiConfig(),r=await fetch(aiUrl('/api/comfy/history?prompt_id='+encodeURIComponent(id)),{headers:{'X-App-Token':c.token}});
+  const d=await readApiResponse(r);
+  const record=d.history&&d.history[id]||d[id]||d;
+  $('comfyOutput').innerHTML='';
+  const status=document.createElement('p');
+  const outputs=record.outputs||{};
+  const files=[];
+  Object.values(outputs).forEach(node=>['images','gifs','videos'].forEach(kind=>
+   (node[kind]||[]).forEach(file=>files.push(file))));
+  status.textContent=files.length?'Hoàn thành · '+files.length+' tệp đầu ra.':'Đã nhận lịch sử tác vụ. Nếu chưa có output, tác vụ có thể vẫn đang chạy hoặc workflow chưa tạo output được lưu.';
+  $('comfyOutput').append(status);
+  files.forEach(file=>{
+   const link=document.createElement('a');link.href=aiUrl('/api/comfy/view?filename='+encodeURIComponent(file.filename)+'&subfolder='+encodeURIComponent(file.subfolder||'')+'&type='+encodeURIComponent(file.type||'output'));
+   link.target='_blank';link.rel='noopener noreferrer';link.textContent='Mở '+file.filename;link.style.display='block';link.style.margin='8px';
+   link.onclick=async ev=>{ev.preventDefault();try{const rr=await fetch(link.href,{headers:{'X-App-Token':c.token}});if(!rr.ok)throw new Error('Không tải được output');const blob=await rr.blob(),url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=file.filename;a.click();setTimeout(()=>URL.revokeObjectURL(url),30000)}catch(err){toast(err.message)}};
+   $('comfyOutput').append(link);
+  });
+  toast(files.length?'Đã lấy output ComfyUI':'Đã cập nhật lịch sử tác vụ');
+ }catch(e){$('comfyOutput').textContent=e.message;toast(e.message)}
+ finally{aiBusy(b,false,'Kiểm tra tiến độ')}
+};
